@@ -26,6 +26,7 @@ def _validate_field_lookup_term(model, term):
     """
     # TODO: Memoization for speed enchancements?
     terms = term.split('__')
+
     model_fields = model._meta.get_all_field_names()
     if terms[0] not in model_fields:
         raise APIInputError("Field %r does not exist. Valid lookups are %s." 
@@ -46,12 +47,18 @@ def _validate_field_lookup_term(model, term):
         # an instance associated with it).
         field_details = model._meta.get_field_by_name(terms[0])
         # if the field is direct field
-        if field_details[2]:
-                m = field_details[0].related.model
-        else:
-            m = field_details[0].model
-        
+
+        m = field_details[0].model
+        try:
+            m = field_details[0].rel.model
+        except:
+            pass
+        try:
+            m = field_details[0].related_model
+        except:
+            pass
         return _validate_field_lookup_term(m, '__'.join(terms[1:]))
+
 
 def _clean_source(source):
     if isinstance(source, ModelBase):
