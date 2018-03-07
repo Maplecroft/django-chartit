@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.db.models.aggregates import Aggregate
 from django.db.models.query import QuerySet
 
@@ -9,7 +10,7 @@ def assertOptionDictsEqual(self, first, second):
         msg = "Lengths don't match; %r --> %r" %(first, second)
         self.fail(msg)
     if set(first.keys()) != set(second.keys()):
-        msg = "Keys don't match %s, %s" %(first.keys(), second.keys())
+        msg = "Keys don't match %s, %s" %(list(first.keys()), list(second.keys()))
         self.fail(msg)
     for k1, v1 in first.items():
         v2 = second[k1]

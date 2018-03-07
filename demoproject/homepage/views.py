@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.shortcuts import render_to_response
 from demoproject.chartdemo.models import MonthlyWeatherByCity
 from chartit import DataPool, Chart

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.conf.urls.defaults import patterns
 from django.views.generic.simple import redirect_to
 

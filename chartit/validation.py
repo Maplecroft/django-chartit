@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import copy
 
 from django.db.models.aggregates import Aggregate
@@ -6,6 +7,7 @@ from django.db.models.manager import Manager
 from django.db.models.query import QuerySet
 
 from .exceptions import APIInputError
+import six
 
 
 def _validate_field_lookup_term(model, term):
@@ -70,7 +72,7 @@ def _validate_func(func):
                             "Got %s of type %s instead" % (func, type(func)))
 
 def _clean_categories(categories, source):
-    if isinstance(categories, basestring):
+    if isinstance(categories, six.string_types):
         categories = [categories]
     elif isinstance(categories, (tuple, list)):
         if not categories:
@@ -84,14 +86,14 @@ def _clean_categories(categories, source):
                             %(categories, type(categories)))
     field_aliases = {}
     for c in categories:
-        if c in source.query.aggregates.keys() or c in source.query.extra.keys():
+        if c in list(source.query.aggregates.keys()) or c in list(source.query.extra.keys()):
             field_aliases[c] = c
         else:
             field_aliases[c] = _validate_field_lookup_term(source.model, c)
     return categories, field_aliases
 
 def _clean_legend_by(legend_by, source):
-    if isinstance(legend_by, basestring):
+    if isinstance(legend_by, six.string_types):
         legend_by = [legend_by]
     elif isinstance(legend_by, (tuple, list)):
         pass
@@ -224,11 +226,11 @@ def _convert_dps_to_dict(series_list):
             raise APIInputError("%s is missing the 'terms' key." %sd)
         if isinstance(terms, list):
             for term in terms:
-                if isinstance(term, basestring):
+                if isinstance(term, six.string_types):
                     series_dict[term] = copy.deepcopy(options)
                 elif isinstance(term, dict):
                     for tk, tv in term.items():
-                        if isinstance(tv, basestring):
+                        if isinstance(tv, six.string_types):
                             opts = copy.deepcopy(options)
                             opts['field'] = tv
                             series_dict[tk] = opts
@@ -241,7 +243,7 @@ def _convert_dps_to_dict(series_list):
                                                 "dict in place of: %s" %tv)
         elif isinstance(terms, dict):
             for tk, tv in terms.items():
-                if isinstance(tv, basestring):
+                if isinstance(tv, six.string_types):
                     opts = copy.deepcopy(options)
                     opts['field'] = tv
                     series_dict[tk] = opts
@@ -298,7 +300,7 @@ def _convert_pcso_to_dict(series_options):
             raise APIInputError("%s is missing the 'terms' key." %stod)
         if isinstance(terms, list):
             for term in terms:
-                if isinstance(term, basestring):
+                if isinstance(term, six.string_types):
                     opts = copy.deepcopy(options)
                     series_options_dict.update({term: opts})
                 elif isinstance(term, dict):
@@ -320,12 +322,12 @@ def clean_pcso(series_options, ds):
     #todlist = term option dict list
     if isinstance(series_options, dict):
         for sok, sod in series_options.items():
-            if sok not in ds.series.keys():
+            if sok not in list(ds.series.keys()):
                     raise APIInputError("All the series terms must be present "
                                         "in the series dict of the "
                                         "datasource. Got %s. Allowed values "
                                         "are: %s" 
-                                        %(sok, ', '.join(ds.series.keys())))
+                                        %(sok, ', '.join(list(ds.series.keys()))))
             if not isinstance(sod, dict):
                 raise APIInputError("All the series options must be of the "
                                     "type dict. Got %s of type %s instead." 
@@ -360,15 +362,15 @@ def _convert_cso_to_dict(series_options):
             for tk, td in terms.items():
                 if isinstance(td, list):
                     for yterm in td:
-                        if isinstance(yterm, basestring):
+                        if isinstance(yterm, six.string_types):
                             opts = copy.deepcopy(options)
                             opts['_x_axis_term'] = tk
                             series_options_dict[yterm] = opts
                         elif isinstance(yterm, dict):
                             opts = copy.deepcopy(options)
-                            opts.update(yterm.values()[0])
+                            opts.update(list(yterm.values())[0])
                             opts['_x_axis_term'] = tk
-                            series_options_dict[yterm.keys()[0]] = opts
+                            series_options_dict[list(yterm.keys())[0]] = opts
                         else:
                             raise APIInputError("Expecting a basestring or "
                                                 "dict in place of: %s." %yterm)
@@ -385,22 +387,22 @@ def clean_cso(series_options, ds):
     """
     if isinstance(series_options, dict):
         for sok, sod in series_options.items():
-            if sok not in ds.series.keys():
+            if sok not in list(ds.series.keys()):
                     raise APIInputError("%s is not one of the keys of the "
                                         "datasource series. Allowed values "
                                         "are: %s" 
-                                        %(sok, ', '.join(ds.series.keys())))
+                                        %(sok, ', '.join(list(ds.series.keys()))))
             if not isinstance(sod, dict):
                 raise APIInputError("%s is of type: %s. Expecting a dict." 
                                     %(sod, type(sod)))
             try:
                 _x_axis_term = sod['_x_axis_term']
-                if _x_axis_term not in ds.series.keys():
+                if _x_axis_term not in list(ds.series.keys()):
                     raise APIInputError("%s is not one of the keys of the "
                                         "datasource series. Allowed values "
                                         "are: %s" 
                                         %(_x_axis_term, 
-                                          ', '.join(ds.series.keys())))
+                                          ', '.join(list(ds.series.keys()))))
             except KeyError:
                 raise APIInputError("Expecting a '_x_axis_term' for %s." %sod)
             if ds.series[sok]['_data'] != ds.series[_x_axis_term]['_data']:

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.shortcuts import render_to_response, redirect
 from demoproject.utils.decorators import add_source_code_and_doc
 

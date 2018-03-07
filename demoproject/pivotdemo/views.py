@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import os
 from django.shortcuts import render_to_response
 from django.db.models import Sum, Avg
 from chartit import PivotChart, PivotDataPool
 from demoproject.utils.decorators import add_source_code_and_doc
-from models import SalesHistory
+from .models import SalesHistory
 
 
 @add_source_code_and_doc

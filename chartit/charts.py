@@ -1,13 +1,16 @@
+from __future__ import absolute_import
 import copy
 from collections import defaultdict
-from itertools import groupby, izip
+from itertools import groupby
 # use SortedDict instead of native OrderedDict for Python 2.6 compatibility
 from django.utils.datastructures import SortedDict
 
-from highcharts import HCOptions
-from validation import clean_pcso, clean_cso, clean_x_sortf_mapf_mts
-from exceptions import APIInputError
-from chartdata import PivotDataPool, DataPool
+from .highcharts import HCOptions
+from .validation import clean_pcso, clean_cso, clean_x_sortf_mapf_mts
+from .exceptions import APIInputError
+from .chartdata import PivotDataPool, DataPool
+import six
+from six.moves import zip
 
 class Chart(object):
     
@@ -152,11 +155,11 @@ class Chart(object):
         """
         dss = self.datasource.series
         x_axis_vqs_groups = defaultdict(dict)
-        sort_fn = lambda (tk, td): td.get('xAxis', 0)
-        so = sorted(self.series_options.items(), key=sort_fn)
+        sort_fn = lambda tk_td4: tk_td4[1].get('xAxis', 0)
+        so = sorted(list(self.series_options.items()), key=sort_fn)
         x_axis_groups = groupby(so, sort_fn)
         for (x_axis, itr1) in x_axis_groups:
-            sort_fn = lambda (tk, td): dss[td['_x_axis_term']]['_data']
+            sort_fn = lambda tk_td: dss[tk_td[1]['_x_axis_term']]['_data']
             itr1 = sorted(itr1, key=sort_fn)
             for _vqs_num, (_data, itr2) in enumerate(groupby(itr1, sort_fn)):
                 x_axis_vqs_groups[x_axis][_vqs_num] = _x_vqs = {}
@@ -245,7 +248,7 @@ class Chart(object):
                 x_sortf, x_mapf, x_mts = (None, None, False)
             ptype_x_y_terms = defaultdict(list)
             for vqs_group in vqs_groups.values(): 
-                x_term, y_terms_all = vqs_group.items()[0]
+                x_term, y_terms_all = list(vqs_group.items())[0]
                 y_terms_by_type = defaultdict(list)
                 for y_term in y_terms_all:
                     y_terms_by_type[cht_typ_grp(y_term)].append(y_term)
@@ -288,11 +291,11 @@ class Chart(object):
                                          [value_dict[y_field] for y_field 
                                           in y_fields]) 
                                         for value_dict in x_vqs)
-                                sort_key = ((lambda(x, y): x_sortf(x)) 
+                                sort_key = ((lambda x_y: x_sortf(x_y[0])) 
                                             if x_sortf is not None else None)
                                 data = sorted(data, key=sort_key)
                         else:
-                            sort_key = ((lambda(x, y): x_sortf(x)) 
+                            sort_key = ((lambda x_y1: x_sortf(x_y1[0])) 
                                             if x_sortf is not None else None)
                             data = sorted(
                                     ((value_dict[x_field], 
@@ -307,14 +310,14 @@ class Chart(object):
                             if self.series_options[y_term]['type']=='scatter':
                                 #scatter plot
                                 for x_value, y_value_tuple in data:
-                                    for opts, y_value in izip(y_hco_list,
+                                    for opts, y_value in zip(y_hco_list,
                                                               y_value_tuple):
                                         opts['data'].append((x_value, y_value))
                                 self.hcoptions['series'].extend(y_hco_list)
                             else:
                                 # pie chart
                                 for x_value, y_value_tuple in data:
-                                    for opts, y_value in izip(y_hco_list,
+                                    for opts, y_value in zip(y_hco_list,
                                                               y_value_tuple):
                                         opts['data'].append((str(x_value), 
                                                              y_value))
@@ -332,7 +335,7 @@ class Chart(object):
                             for x_value, y_value_tuple in data:
                                 hco_x_axis[x_axis_num]['categories']\
                                   .append(x_value)
-                                for opts, y_value in izip(y_hco_list, 
+                                for opts, y_value in zip(y_hco_list, 
                                                           y_value_tuple):
                                     opts['data'].append(y_value)
                             self.hcoptions['series'].extend(y_hco_list)
@@ -373,13 +376,13 @@ class Chart(object):
                         if x_mapf: 
                             data = ((x_mapf(x_value), y_vals) for 
                                     (x_value, y_vals) in 
-                                    y_values_multi.iteritems())
-                            sort_key = ((lambda(x, y): x_sortf(x)) if x_sortf 
+                                    six.iteritems(y_values_multi))
+                            sort_key = ((lambda x_y2: x_sortf(x_y2[0])) if x_sortf 
                                         is not None else None)
                             data = sorted(data, key=sort_key)
                     else:
-                        data = y_values_multi.iteritems()
-                        sort_key = ((lambda(x, y): x_sortf(x)) if x_sortf 
+                        data = six.iteritems(y_values_multi)
+                        sort_key = ((lambda x_y3: x_sortf(x_y3[0])) if x_sortf 
                                     is not None else None)
                         data = sorted(data, key=sort_key)
                         if x_mapf:
@@ -388,7 +391,7 @@ class Chart(object):
                     for x_value, y_vals in data:
                         hco_x_axis[x_axis_num]['categories']\
                           .append(x_value)
-                        for opts, y_value in izip(y_hco_list_multi, y_vals):
+                        for opts, y_value in zip(y_hco_list_multi, y_vals):
                             opts['data'].append(y_value)
                     self.hcoptions['series'].extend(y_hco_list_multi)
                     
@@ -515,7 +518,7 @@ class PivotChart(object):
         self.hcoptions = HCOptions({})
         # series and terms
         dss = self.datasource.series
-        terms = self.series_options.keys()
+        terms = list(self.series_options.keys())
         # legend by
         lgby_dict = dict(((t, dss[t]['legend_by']) for t in terms))
         lgby_vname_lists= [[dss[t]['field_aliases'].get(lgby, lgby) 

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 from django.shortcuts import render_to_response
 from chartit import DataPool, Chart

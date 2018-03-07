@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import os
 import fabric
 from fabric.api import env, local, sudo, cd, prefix
